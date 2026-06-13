@@ -1,0 +1,6 @@
+class Wydatek:
+    def __init__(self, data, kategoria, kwota, opis):
+        self.data = data
+        self.kategoria = kategoria
+        self.kwota = kwota
+        self.opis = opis
