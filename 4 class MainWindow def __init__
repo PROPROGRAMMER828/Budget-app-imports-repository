@@ -1,0 +1,31 @@
+class MainWindow(QMainWindow):
+    def __init__(self):
+        super().__init__()
+
+        self.manager = BudgetManager()
+
+        self.setWindowTitle("Budżet domowy")
+        self.resize(900, 600)
+
+        widget = QWidget()
+        self.setCentralWidget(widget)
+
+        layout = QVBoxLayout()
+
+        button = QPushButton("Wczytaj plik Excel")
+        button.clicked.connect(self.wczytaj_plik)
+
+        self.table = QTableWidget()
+        self.table.setColumnCount(4)
+        self.table.setHorizontalHeaderLabels(
+            ["Data", "Kategoria", "Kwota", "Opis"]
+        )
+
+        self.figure = Figure()
+        self.canvas = FigureCanvas(self.figure)
+
+        layout.addWidget(button)
+        layout.addWidget(self.table)
+        layout.addWidget(self.canvas)
+
+        widget.setLayout(layout)
