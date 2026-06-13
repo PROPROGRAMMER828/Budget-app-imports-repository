@@ -1,0 +1,42 @@
+    def wczytaj_plik(self):
+        sciezka, _ = QFileDialog.getOpenFileName(
+            self,
+            "Wybierz plik",
+            "",
+            "Excel Files (*.xlsx)"
+        )
+
+        if not sciezka:
+            return
+
+        try:
+            self.manager.wczytaj_z_excela(sciezka)
+
+            dane = self.manager.wydatki
+
+            self.table.setRowCount(len(dane))
+
+            for i, w in enumerate(dane):
+                self.table.setItem(i, 0, QTableWidgetItem(str(w.data)))
+                self.table.setItem(i, 1, QTableWidgetItem(w.kategoria))
+                self.table.setItem(i, 2, QTableWidgetItem(str(w.kwota)))
+                self.table.setItem(i, 3, QTableWidgetItem(w.opis))
+
+            self.figure.clear()
+
+            ax = self.figure.add_subplot(111)
+
+            suma = self.manager.oblicz_sume_kategorii()
+
+            ax.pie(
+                suma.values(),
+                labels=suma.keys(),
+                autopct="%1.1f%%"
+            )
+
+            ax.set_title("Wydatki wg kategorii")
+
+            self.canvas.draw()
+
+        except Exception as e:
+            QMessageBox.critical(self, "Błąd", str(e))
