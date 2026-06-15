@@ -1,0 +1,132 @@
+import sys
+import pandas
+
+from PyQt5.QtWidgets import *
+from matplotlib.backends.backend_qt5agg import FigureCanvasQTAgg as FigureCanvas
+from matplotlib.figure import Figure
+
+
+class Student:
+    def __init__(self, imie, nazwisko, indeks, kierunek):
+        self.imie = imie
+        self.nazwisko = nazwisko
+        self.indeks = indeks
+        self.kierunek = kierunek
+
+
+class StudentManager:
+    def __init__(self):
+        self.studenci = []
+
+    def dodaj_studenta(self, student):
+        self.studenci.append(student)
+
+    def czysc_dane(self):
+        self.studenci.clear()
+
+    def policz_studentow_na_kierunku(self):
+        wynik = {}
+
+        for s in self.studenci:
+            wynik[s.kierunek] = wynik.get(s.kierunek, 0) + 1
+
+        return wynik
+
+    def wczytaj_z_excela(self, sciezka):
+        self.czysc_dane()
+
+        dane = pandas.read_excel(sciezka)
+
+        for _, row in dane.iterrows():
+            self.dodaj_studenta(
+                Student(
+                    row["Imie"],
+                    row["Nazwisko"],
+                    row["Indeks"],
+                    row["Kierunek"]
+                )
+            )
+
+
+class MainWindow(QMainWindow):
+    def __init__(self):
+        super().__init__()
+
+        self.manager = StudentManager()
+
+        self.setWindowTitle("Studenci")
+        self.resize(900, 600)
+
+        widget = QWidget()
+        self.setCentralWidget(widget)
+
+        layout = QVBoxLayout()
+
+        button = QPushButton("Wczytaj plik Excel")
+        button.clicked.connect(self.wczytaj_plik)
+
+        self.table = QTableWidget()
+        self.table.setColumnCount(4)
+
+        self.table.setHorizontalHeaderLabels(
+            ["Imię", "Nazwisko", "Indeks", "Kierunek"]
+        )
+
+        self.figure = Figure()
+        self.canvas = FigureCanvas(self.figure)
+
+        layout.addWidget(button)
+        layout.addWidget(self.table)
+        layout.addWidget(self.canvas)
+
+        widget.setLayout(layout)
+
+    def wczytaj_plik(self):
+        sciezka, _ = QFileDialog.getOpenFileName(
+            self,
+            "Wybierz plik",
+            "",
+            "Excel Files (*.xlsx)"
+        )
+
+        if not sciezka:
+            return
+
+        try:
+            self.manager.wczytaj_z_excela(sciezka)
+
+            dane = self.manager.studenci
+
+            self.table.setRowCount(len(dane))
+
+            for i, s in enumerate(dane):
+                self.table.setItem(i, 0, QTableWidgetItem(s.imie))
+                self.table.setItem(i, 1, QTableWidgetItem(s.nazwisko))
+                self.table.setItem(i, 2, QTableWidgetItem(str(s.indeks)))
+                self.table.setItem(i, 3, QTableWidgetItem(s.kierunek))
+
+            self.figure.clear()
+
+            ax = self.figure.add_subplot(111)
+
+            suma = self.manager.policz_studentow_na_kierunku()
+
+            ax.bar(
+                suma.keys(),
+                suma.values()
+            )
+
+            ax.set_title("Liczba studentów na kierunku")
+
+            self.canvas.draw()
+
+        except Exception as e:
+            QMessageBox.critical(self, "Błąd", str(e))
+
+
+app = QApplication(sys.argv)
+
+window = MainWindow()
+window.show()
+
+sys.exit(app.exec_())
